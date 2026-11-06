@@ -20,29 +20,111 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 76,
-              height: 76,
-              decoration: BoxDecoration(color: AppColors.violetSoft, borderRadius: BorderRadius.circular(25)),
-              child: Icon(icon, color: AppColors.primary, size: 34),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableHeight = constraints.maxHeight;
+
+        final isCompact = availableHeight < 220;
+        final isVeryCompact = availableHeight < 145;
+
+        final iconSize =
+            isVeryCompact
+                ? 44.0
+                : isCompact
+                ? 56.0
+                : 76.0;
+
+        final iconRadius =
+            isVeryCompact
+                ? 15.0
+                : isCompact
+                ? 19.0
+                : 25.0;
+
+        final verticalPadding =
+            isVeryCompact
+                ? 8.0
+                : isCompact
+                ? 12.0
+                : 24.0;
+
+        final titleSize = isVeryCompact ? 14.0 : 17.0;
+        final messageSize = isVeryCompact ? 11.0 : 13.0;
+
+        final spacing =
+            isVeryCompact
+                ? 5.0
+                : isCompact
+                ? 8.0
+                : 14.0;
+
+        return Center(
+          child: SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: verticalPadding,
+              ),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: iconSize,
+                      height: iconSize,
+                      decoration: BoxDecoration(
+                        color: AppColors.violetSoft,
+                        borderRadius: BorderRadius.circular(iconRadius),
+                      ),
+                      child: Icon(
+                        icon,
+                        color: AppColors.primary,
+                        size: iconSize * 0.45,
+                      ),
+                    ),
+
+                    SizedBox(height: spacing),
+
+                    Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: titleSize,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.ink,
+                      ),
+                    ),
+
+                    SizedBox(height: isVeryCompact ? 3 : 7),
+
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: messageSize,
+                        height: 1.4,
+                        color: AppColors.muted,
+                      ),
+                    ),
+
+                    if (actionLabel != null && onAction != null) ...[
+                      SizedBox(height: spacing),
+                      FilledButton.icon(
+                        onPressed: onAction,
+                        icon: const Icon(Icons.add_rounded),
+                        label: Text(actionLabel!),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 18),
-            Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.ink)),
-            const SizedBox(height: 8),
-            Text(message, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, height: 1.55, color: AppColors.muted)),
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 18),
-              FilledButton.icon(onPressed: onAction, icon: const Icon(Icons.add_rounded), label: Text(actionLabel!)),
-            ],
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

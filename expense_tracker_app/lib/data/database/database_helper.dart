@@ -1,5 +1,8 @@
+
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 import '../models/expense_transaction.dart';
 
@@ -17,8 +20,17 @@ class DatabaseHelper {
   Future<Database> get database async {
     if (_database != null) return _database!;
 
-    final databasesPath = await getDatabasesPath();
-    final databasePath = path.join(databasesPath, _databaseName);
+    late String databasePath;
+
+    if (kIsWeb) {
+      // Use browser-compatible SQLite on Web
+      databaseFactory = databaseFactoryFfiWeb;
+      databasePath = _databaseName;
+    } else {
+      // Keep existing SQLite implementation on Android/iOS
+      final databasesPath = await getDatabasesPath();
+      databasePath = path.join(databasesPath, _databaseName);
+    }
 
     _database = await openDatabase(
       databasePath,
@@ -34,8 +46,14 @@ class DatabaseHelper {
             date TEXT NOT NULL
           )
         ''');
-        await db.execute('CREATE INDEX idx_transactions_date ON $tableName(date)');
-        await db.execute('CREATE INDEX idx_transactions_type ON $tableName(type)');
+
+        await db.execute(
+          'CREATE INDEX idx_transactions_date ON $tableName(date)',
+        );
+
+        await db.execute(
+          'CREATE INDEX idx_transactions_type ON $tableName(type)',
+        );
       },
     );
 
@@ -44,23 +62,32 @@ class DatabaseHelper {
 
   Future<List<ExpenseTransaction>> getTransactions() async {
     final db = await database;
+
     final rows = await db.query(
       tableName,
       orderBy: 'date DESC, id DESC',
     );
+
     return rows.map(ExpenseTransaction.fromMap).toList();
   }
 
   Future<int> insertTransaction(ExpenseTransaction transaction) async {
     final db = await database;
-    return db.insert(tableName, transaction.toMap(), conflictAlgorithm: ConflictAlgorithm.abort);
+
+    return db.insert(
+      tableName,
+      transaction.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.abort,
+    );
   }
 
   Future<int> updateTransaction(ExpenseTransaction transaction) async {
     if (transaction.id == null) {
       throw ArgumentError('A transaction ID is required for an update.');
     }
+
     final db = await database;
+
     return db.update(
       tableName,
       transaction.toMap(),
@@ -71,6 +98,11 @@ class DatabaseHelper {
 
   Future<int> deleteTransaction(int id) async {
     final db = await database;
-    return db.delete(tableName, where: 'id = ?', whereArgs: [id]);
+
+    return db.delete(
+      tableName,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 }
